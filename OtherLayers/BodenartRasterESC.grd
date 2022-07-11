@@ -1,0 +1,29 @@
+[general]
+creator=R package 'raster'
+created=2022-03-21 16:13:33
+[georeference]
+nrows=1999
+ncols=1999
+xmin=694600
+ymin=5548490
+xmax=714590
+ymax=5568480
+projection=+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs
+[data]
+datatype=FLT4S
+byteorder=little
+nbands=1
+bandorder=BIL
+categorical=TRUE
+ratnames=ID:value
+rattypes=integer:character
+ratvalues=10:20:30:40:50:60:70:clay:debris:loam:organic:sand:silt:water
+minvalue=10
+maxvalue=70
+nodatavalue=-3.4e+38
+[legend]
+legendtype=
+values=
+color=
+[description]
+layername=soil_texture

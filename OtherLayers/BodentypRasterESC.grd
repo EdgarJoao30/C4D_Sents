@@ -1,0 +1,29 @@
+[general]
+creator=R package 'raster'
+created=2022-03-21 16:13:03
+[georeference]
+nrows=1999
+ncols=1999
+xmin=694600
+ymin=5548490
+xmax=714590
+ymax=5568480
+projection=+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs
+[data]
+datatype=FLT4S
+byteorder=little
+nbands=1
+bandorder=BIL
+categorical=TRUE
+ratnames=ID:value
+rattypes=integer:character
+ratvalues=1:2:3:4:5:organic:semi-terrestrial:terrestrial:stagnic:water
+minvalue=1
+maxvalue=5
+nodatavalue=-3.4e+38
+[legend]
+legendtype=
+values=
+color=
+[description]
+layername=soil_type

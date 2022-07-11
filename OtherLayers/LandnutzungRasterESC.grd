@@ -1,0 +1,29 @@
+[general]
+creator=R package 'raster'
+created=2022-03-21 16:13:33
+[georeference]
+nrows=1999
+ncols=1999
+xmin=694600
+ymin=5548490
+xmax=714590
+ymax=5568480
+projection=+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs
+[data]
+datatype=FLT4S
+byteorder=little
+nbands=1
+bandorder=BIL
+categorical=TRUE
+ratnames=ID:value
+rattypes=integer:character
+ratvalues=1100:1200:1300:1400:1500:1600:1700:1800:1900:2100:2200:2300:2400:arable_land:bog:free_of_vegetation:grassland:road:settlement:swamp:tree_plantation:water:coniferous_forest:deciduous_forest:deforested:mixed_forest
+minvalue=1100
+maxvalue=2200
+nodatavalue=-3.4e+38
+[legend]
+legendtype=
+values=
+color=
+[description]
+layername=landuse

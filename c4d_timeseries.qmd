@@ -1,0 +1,182 @@
+---
+title: "Carbon4d - Sentinel time series"
+author: "Edgar Manrique"
+format: html
+editor: source
+---
+
+# Load data
+
+```{r}
+#| output: false
+  
+library(tidyverse)
+library(sf)
+library(raster)
+library(lubridate)
+library(rgee)
+library(leaflet)
+ee_Initialize(user = 'edgar.manrique30@gmail.com')
+```
+
+```{r}
+img <- ee$Image("users/edgarmanrique30/c4d_s1s2Stack_10m_10D_3857_2021_20220710")
+
+imgVisParams <- list(
+    bands = c("NDVI_5", "NDVI_3", "NDVI_1"),
+    min = 1000,
+    max = 7000,
+    opacity = 1
+  )
+Map$setCenter(11.8687, 50.1059, 12)
+Map$addLayer(
+  eeObject = img,
+  visParams = imgVisParams,
+  name = "ndvi stack"
+)
+```
+
+```{r}
+#| output: false
+probes <- st_read('ProbeMetaData.geojson')
+bodentyp <- raster('OtherLayers/BodentypRasterESC.grd')
+bodenart <- raster('OtherLayers/BodenartRasterESC.grd')
+landnutzung <- raster('OtherLayers/LandnutzungRasterESC.grd')
+esc <- raster('OtherLayers/ESCRasterESC.grd')
+
+probes <- probes |> 
+  mutate(bodentyp = raster::extract(bodentyp, probes),
+         bodenart = raster::extract(bodenart, probes),
+         landnutzung = raster::extract(landnutzung, probes),
+         envSoilClass = raster::extract(esc, probes))
+
+
+probes_rs <- ee_extract(x = img, y = probes[c("plot_id", 
+                                              'bodentyp',
+                                              'bodenart',
+                                              'landnutzung',
+                                              'envSoilClass')], 
+                        sf = FALSE, scale = 10)
+```
+
+```{r}
+leaflet(probes) |> 
+  addProviderTiles('Esri.WorldImagery') |> 
+  addCircleMarkers() 
+```
+
+
+```{r}
+#| layout: [[50, 50], [50, 50]]
+plot(bodentyp, main = 'Bodentyp')
+plot(bodenart, main = 'Bodenart')
+plot(landnutzung, main = 'Landnutzung')
+plot(esc, main = 'Environmental Soil Class')
+```
+
+
+```{r}
+#| warning: false
+#| 
+probes_rs2 <- 
+  probes_rs |> 
+  pivot_longer(cols = c(B1:VV_9), 
+               names_to = c('band', 'date'),
+               names_sep = '_') |> 
+  mutate(
+         bodentyp = case_when(bodentyp == 1 ~ 'Organish',
+                              bodentyp == 2 ~ 'Semi-terrestrisch',
+                              bodentyp == 3 ~ 'Stauwasser',
+                              bodentyp == 4 ~ 'Terrestrisch',
+                              bodentyp == 5 ~ 'Wasser'),
+         bodenart = case_when(bodenart == 10 ~ 'Ton',
+                              bodenart == 20 ~ 'Schutt',
+                              bodenart == 30 ~ 'Lehm',
+                              bodenart == 40 ~ 'Organisch',
+                              bodenart == 50 ~ 'Sand',
+                              bodenart == 60 ~ 'Schluff',
+                              bodenart == 70 ~ 'Wasser'),
+         landnutzung = case_when(landnutzung == 1100 ~ 'Nadelwald',
+                                 landnutzung == 1200 ~ 'Laubwald',
+                                 landnutzung == 1300 ~ 'Entwaldet',
+                                 landnutzung == 1400 ~ 'Mischwald',
+                                 landnutzung == 1500 ~ 'Acker',
+                                 landnutzung == 1600 ~ 'Grünland',
+                                 landnutzung == 1700 ~ 'Moor',
+                                 landnutzung == 1800 ~ 'Sumpf',
+                                 landnutzung == 1900 ~ 'Ohne vegetation',
+                                 landnutzung == 2000 ~ 'Siedlung',
+                                 landnutzung == 2100 ~ 'Strasse',
+                                 landnutzung == 2200 ~ 'Wasser',)) |> 
+  mutate(value = replace(value, value == 1, NA)) |> 
+  mutate(date = replace(date, is.na(date), 0)) 
+
+doy <- 
+  probes_rs2 |> 
+  dplyr::filter(band == 'doy') |> 
+  dplyr::select(date, value) |> 
+  group_by(date) |> 
+  summarise(value = mean(value)) |> 
+  mutate(date2 = ymd(strptime(paste("2021", value), format="%Y %j")),
+         date2 = replace(date2, is.na(date2), '2021-12-31')) |> 
+  rename(doy = value)
+
+probes_rs2 <- left_join(probes_rs2, doy, by = "date") |> 
+  rename(time_step = date, date = date2) |> 
+  filter(band != 'doy') |> 
+  mutate(value = value / 10000)
+
+doy <- doy |> rename(time_step = date, date = date2) |> 
+  arrange(doy)
+```
+
+```{r}
+probes_rs2 |> 
+  group_by(landnutzung, band, date) |> 
+  summarise(value = mean(value, na.rm = T)) |> 
+  ggplot() +
+  geom_line(aes(x = date, y = value, group = landnutzung, col = landnutzung)) +
+  facet_wrap(.~band, scales = 'free_y', ) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = '', y = '', col = 'Landnutzung')
+  
+```
+
+```{r}
+source('load_c4d_data.R')
+
+Probe_Measurements_sf2 <- 
+  Probe_Measurements_sf |> 
+  dplyr::select(datetime, T_15, M_15, probe_id) |> 
+  mutate(datetime = ymd_hms(datetime),
+         date = date(datetime),
+         doy = yday(date))
+```
+
+```{r}
+Probe_Measurements_2021_10D_15cm<-
+  Probe_Measurements_sf2 |> 
+  filter(year(date) == 2021) |> 
+  group_by(probe_id, dr = cut(date, breaks = c(range(date), 
+            as.Date(c('2021-11-05', 
+                    '2021-11-15',
+                    '2021-11-25',
+                    '2021-12-06',
+                    '2021-12-26'))), include.lowest=TRUE)) |> 
+  summarise(T_15 = mean(T_15, na.rm = T),
+            M_15 = mean(M_15, na.rm = T))
+```
+
+```{r}
+Probe_Measurements_2021_10D_15cm |> 
+ggplot() +
+  geom_line(aes(x = ymd(dr), y = T_15, group = probe_id)) + 
+  facet_wrap(.~probe_id) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = '', y = '', caption = 'Temperature at 15cm depth')
+```
+
+
+
