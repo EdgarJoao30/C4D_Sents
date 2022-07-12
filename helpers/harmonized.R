@@ -3,7 +3,7 @@ library(sf)
 library(raster)
 library(lubridate)
 library(rgee)
-source('aggProbeInSitu.R')
+source('helpers/aggProbeInSitu.R')
 
 year <- '2021'
 version <- '20220710'

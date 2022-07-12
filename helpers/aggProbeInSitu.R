@@ -3,8 +3,8 @@ library(sf)
 library(raster)
 library(lubridate)
 library(rgee)
-source('extractS1S2.R')
-source('load_c4d_data.R')
+source('helpers/extractS1S2.R')
+source('helpers/load_c4d_data.R')
 
 # base parameters
 # year <- '2021'
