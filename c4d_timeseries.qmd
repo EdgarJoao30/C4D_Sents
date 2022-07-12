@@ -38,11 +38,11 @@ Map$addLayer(
 
 ```{r}
 #| output: false
-probes <- st_read('geometries/ProbeMetaData.geojson')
-bodentyp <- raster('OtherLayers/BodentypRasterESC.grd')
-bodenart <- raster('OtherLayers/BodenartRasterESC.grd')
-landnutzung <- raster('OtherLayers/LandnutzungRasterESC.grd')
-esc <- raster('OtherLayers/ESCRasterESC.grd')
+probes <- st_read('layers/ProbeMetaData.geojson')
+bodentyp <- raster('layers/BodentypRasterESC.grd')
+bodenart <- raster('layers/BodenartRasterESC.grd')
+landnutzung <- raster('layers/LandnutzungRasterESC.grd')
+esc <- raster('layers/ESCRasterESC.grd')
 ```
 
 ```{r}
@@ -95,7 +95,7 @@ ggplot() +
   labs(x = '', y = '', caption = 'Temperature at 15cm depth')
 ```
 ```{r}
-df <- st_read('geometries/harmonized.geojson')
+df <- st_read('layers/harmonized.geojson')
 
 df |> 
 ggplot() +

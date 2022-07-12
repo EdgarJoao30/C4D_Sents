@@ -7,7 +7,7 @@ source('helpers/aggProbeInSitu.R')
 
 year <- '2021'
 version <- '20220710'
-probes <- st_read('../geometries/ProbeMetaData.geojson')
+probes <- st_read('../layers/ProbeMetaData.geojson')
 T_layer <- 'T_15'
 M_layer <- 'M_15'
 
@@ -41,5 +41,5 @@ sents_wide <-
 
 harmonized <- inner_join(insitu, sents_wide, by = c('probe_id', 'date'))
 
-st_write(harmonized, '../geometries/harmonized.geojson')
+st_write(harmonized, '../layers/harmonized.geojson')
 
