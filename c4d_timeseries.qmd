@@ -38,7 +38,7 @@ Map$addLayer(
 
 ```{r}
 #| output: false
-probes <- st_read('ProbeMetaData.geojson')
+probes <- st_read('geometries/ProbeMetaData.geojson')
 bodentyp <- raster('OtherLayers/BodentypRasterESC.grd')
 bodenart <- raster('OtherLayers/BodenartRasterESC.grd')
 landnutzung <- raster('OtherLayers/LandnutzungRasterESC.grd')
@@ -63,10 +63,13 @@ plot(esc, main = 'Environmental Soil Class')
 
 
 ```{r}
+#| warnings: false
 
 source('helpers/aggProbeInSitu.R')
 
-probes_rs2 |> 
+df2021 <- aggProbeInSitu('2021', '20220710', probes, T_layer = 'T_15', M_layer = 'M_15')
+sents2021 <- df2021$probe_sents
+sents2021 |> 
   group_by(landnutzung, band, date) |> 
   summarise(value = mean(value, na.rm = T)) |> 
   ggplot() +
@@ -78,35 +81,25 @@ probes_rs2 |>
   
 ```
 
-```{r}
-source('load_c4d_data.R')
 
-Probe_Measurements_sf2 <- 
-  Probe_Measurements_sf |> 
-  dplyr::select(datetime, T_15, M_15, probe_id) |> 
-  mutate(datetime = ymd_hms(datetime),
-         date = date(datetime),
-         doy = yday(date))
-```
 
 ```{r}
-Probe_Measurements_2021_10D_15cm<-
-  Probe_Measurements_sf2 |> 
-  filter(year(date) == 2021) |> 
-  group_by(probe_id, dr = cut(date, breaks = c(range(date), 
-            as.Date(c('2021-11-05', 
-                    '2021-11-15',
-                    '2021-11-25',
-                    '2021-12-06',
-                    '2021-12-26'))), include.lowest=TRUE)) |> 
-  summarise(T_15 = mean(T_15, na.rm = T),
-            M_15 = mean(M_15, na.rm = T))
-```
+insitu2021 <- df2021$probe_insitu
 
-```{r}
-Probe_Measurements_2021_10D_15cm |> 
+insitu2021 |> 
 ggplot() +
-  geom_line(aes(x = ymd(dr), y = T_15, group = probe_id)) + 
+  geom_line(aes(x = date, y = T_15, group = probe_id)) + 
+  facet_wrap(.~probe_id) +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = '', y = '', caption = 'Temperature at 15cm depth')
+```
+```{r}
+df <- st_read('geometries/harmonized.geojson')
+
+df |> 
+ggplot() +
+  geom_line(aes(x = date, y = T_15, group = probe_id)) + 
   facet_wrap(.~probe_id) +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +

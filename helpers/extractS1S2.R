@@ -15,10 +15,10 @@ extractS1S2 <- function(year, version, probes) {
   gee_id <- paste0('users/edgarmanrique30/c4d_s1s2Stack_10m_10D_3857_', year, '_', version)
   img <- ee$Image(gee_id)
   # Load Probes data and additional layers
-  bodentyp <- raster('../OtherLayers/BodentypRasterESC.grd')
-  bodenart <- raster('../OtherLayers/BodenartRasterESC.grd')
-  landnutzung <- raster('../OtherLayers/LandnutzungRasterESC.grd')
-  esc <- raster('../OtherLayers/ESCRasterESC.grd')
+  bodentyp <- raster('OtherLayers/BodentypRasterESC.grd')
+  bodenart <- raster('OtherLayers/BodenartRasterESC.grd')
+  landnutzung <- raster('OtherLayers/LandnutzungRasterESC.grd')
+  esc <- raster('OtherLayers/ESCRasterESC.grd')
   # Extract texture, soil type,landuse, and environmental soil class from rasters to points
   probes <- probes |> 
     mutate(bodentyp = raster::extract(bodentyp, probes),
