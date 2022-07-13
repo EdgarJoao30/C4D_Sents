@@ -51,7 +51,6 @@ leaflet(probes) |>
   addCircleMarkers() 
 ```
 
-
 ```{r}
 #| layout: [[50, 50], [50, 50]]
 plot(bodentyp, main = 'Bodentyp')
@@ -59,8 +58,6 @@ plot(bodenart, main = 'Bodenart')
 plot(landnutzung, main = 'Landnutzung')
 plot(esc, main = 'Environmental Soil Class')
 ```
-
-
 
 ```{r}
 #| warnings: false
@@ -80,8 +77,6 @@ sents2021 |>
   labs(x = '', y = '', col = 'Landnutzung')
   
 ```
-
-
 
 ```{r}
 insitu2021 <- df2021$probe_insitu
