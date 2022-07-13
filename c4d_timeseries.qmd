@@ -94,6 +94,7 @@ ggplot() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = '', y = '', caption = 'Temperature at 15cm depth')
 ```
+
 ```{r}
 df <- st_read('layers/harmonized.geojson')
 
