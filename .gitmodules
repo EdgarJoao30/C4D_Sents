@@ -1,0 +1,3 @@
+[submodule "C4D_geeProcesses"]
+	path = C4D_geeProcesses
+	url = https://earthengine.googlesource.com/users/edgarmanrique30/C4D_geeProcesses
