@@ -101,6 +101,78 @@ ggplot() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = '', y = '', caption = 'Temperature at 15cm depth')
 ```
+```{r}
+library(GGally)
+
+df_long <- df |> 
+  pivot_longer(cols = c(T_15, M_15, B1:VV), names_to = 'parameter')
+
+df |> 
+  as.data.frame() |> 
+  dplyr::select(T_15, M_15, B1:VV) |> 
+  #dplyr::filter(!parameter %in% c('B1','B8', 'B9')) |> 
+  ggpairs()
+```
+
+```{r}
+library(gstat)
+
+df2 <- df |> 
+  st_transform(3857) |> 
+  dplyr::filter(ymd(date) == '2022-03-06')
+
+empirical_variogram <- gstat::variogram(T_15~1, data = df2, 
+                                        width = 4000,
+                                        cutoff = 25000)
+plot(empirical_variogram)
+
+estimated_variogram.model <- gstat::vgm(psill = .5, 
+                                        model = 'Sph', 
+                                        range = 12000, 
+                                        nugget = 0.4)
+
+plot(empirical_variogram, model = estimated_variogram.model)
+```
 
 
+```{r}
+map <- gstat::variogram(T_15~1, data = df2, width = 4000, map = TRUE, cutoff = 25000)
+
+data.frame(map) |> 
+ggplot(aes(x=map.dx,y=map.dy,fill=map.var1))+
+  geom_raster() + 
+  scale_fill_viridis_c(option = 'magma') +
+  theme_minimal() +
+  labs(x = 'dx', y = 'dy', fill = '')
+```
+
+```{r}
+library(stars)
+geom <- st_read('layers/bbox.geojson') |> st_transform(3857)
+
+st_bbox(geom) |> 
+  st_as_stars(dx = 10) |> 
+  st_crop(geom)-> grd
+v.m = fit.variogram(empirical_variogram, estimated_variogram.model)
+
+v.m
+```
+
+```{r}
+plot(empirical_variogram, v.m)
+```
+
+```{r}
+k = krige(T_15~1, df2, grd, v.m)
+```
+
+```{r}
+ggplot() + geom_stars(data = k, aes(fill = var1.pred, x = x, y = y)) + 
+  geom_sf(data = df2) +
+  coord_sf(lims_method = "geometry_bbox") + 
+  geom_sf_label(data = df2, aes(label = round(T_15, digits = 2)), size = 2) +
+  theme_minimal() + 
+  labs(x = '', y= '', fill = 'Prediction') +
+  scale_fill_viridis_c(option = 'magma')
+```
 
