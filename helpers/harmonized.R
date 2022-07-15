@@ -7,7 +7,7 @@ source('helpers/aggProbeInSitu.R')
 
 year <- '2021'
 version <- '20220710'
-probes <- st_read('../layers/ProbeMetaData.geojson')
+probes <- st_read('layers/ProbeMetaData.geojson')
 T_layer <- 'T_15'
 M_layer <- 'M_15'
 

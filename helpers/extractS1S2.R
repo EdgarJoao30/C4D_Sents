@@ -72,7 +72,7 @@ extractS1S2 <- function(year, version, probes) {
     dplyr::filter(band == 'doy') |> 
     dplyr::select(date, value) |> 
     group_by(date) |> 
-    summarise(value = mean(value)) |> 
+    summarise(value = first(value)) |> 
     mutate(date2 = ymd(strptime(paste(year, value), format="%Y %j")),
            date2 = replace(date2, is.na(date2), paste0(year, '-12-31'))) |> 
     rename(doy = value)
