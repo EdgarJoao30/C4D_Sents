@@ -41,5 +41,5 @@ sents_wide <-
 
 harmonized <- inner_join(insitu, sents_wide, by = c('probe_id', 'date'))
 
-st_write(harmonized, '../layers/harmonized.geojson')
+st_write(harmonized, 'layers/harmonized.geojson')
 

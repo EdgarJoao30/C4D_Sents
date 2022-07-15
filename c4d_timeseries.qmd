@@ -23,7 +23,7 @@ ee_Initialize(user = 'edgar.manrique30@gmail.com')
 img <- ee$Image("users/edgarmanrique30/c4d_s1s2Stack_10m_10D_3857_2021_20220710")
 
 imgVisParams <- list(
-    bands = c("NDVI_5", "NDVI_3", "NDVI_1"),
+    bands = c("NDVI_15", "NDVI_8", "NDVI_1"),
     min = 1000,
     max = 7000,
     opacity = 1
@@ -60,12 +60,15 @@ plot(esc, main = 'Environmental Soil Class')
 ```
 
 ```{r}
-#| warnings: false
+#| output: false
 
 source('helpers/aggProbeInSitu.R')
 
 df2021 <- aggProbeInSitu('2021', '20220710', probes, T_layer = 'T_15', M_layer = 'M_15')
 sents2021 <- df2021$probe_sents
+```
+
+```{r}
 sents2021 |> 
   group_by(landnutzung, band, date) |> 
   summarise(value = mean(value, na.rm = T)) |> 
@@ -75,8 +78,8 @@ sents2021 |>
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = '', y = '', col = 'Landnutzung')
-  
 ```
+
 
 ```{r}
 insitu2021 <- df2021$probe_insitu
@@ -91,8 +94,12 @@ ggplot() +
 ```
 
 ```{r}
-df <- st_read('layers/harmonized.geojson')
+#| output: false
 
+df <- st_read('layers/harmonized.geojson')
+```
+
+```{r}
 df |> 
 ggplot() +
   geom_line(aes(x = date, y = T_15, group = probe_id)) + 
@@ -101,7 +108,11 @@ ggplot() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = '', y = '', caption = 'Temperature at 15cm depth')
 ```
+
+
 ```{r}
+#| warning: false
+
 library(GGally)
 
 df_long <- df |> 
@@ -115,28 +126,56 @@ df |>
 ```
 
 ```{r}
+#| layout-ncol: 2
+
 library(gstat)
+#df |> group_by(date) |> summarise(n = n())
 
 df2 <- df |> 
   st_transform(3857) |> 
   dplyr::filter(ymd(date) == '2022-03-06')
 
+df2_05 <- df |> 
+  st_transform(3857) |> 
+  dplyr::filter(ymd(date) == '2022-05-26')
+
 empirical_variogram <- gstat::variogram(T_15~1, data = df2, 
                                         width = 4000,
                                         cutoff = 25000)
+
+empirical_variogram_05 <- gstat::variogram(T_15~1, data = df2_05, 
+                                        width = 6000,
+                                        cutoff = 35000)
+
 plot(empirical_variogram)
+plot(empirical_variogram_05)
+
+
+```
+
+```{r}
+#| layout-ncol: 2
 
 estimated_variogram.model <- gstat::vgm(psill = .5, 
                                         model = 'Sph', 
                                         range = 12000, 
                                         nugget = 0.4)
 
+estimated_variogram.model_05 <- gstat::vgm(psill = 4, 
+                                        model = 'Sph', 
+                                        range = 15000, 
+                                        nugget = 2.6)
+
 plot(empirical_variogram, model = estimated_variogram.model)
+plot(empirical_variogram_05, model = estimated_variogram.model_05)
 ```
 
 
 ```{r}
+#| layout-ncol: 2
+
 map <- gstat::variogram(T_15~1, data = df2, width = 4000, map = TRUE, cutoff = 25000)
+map_05 <- gstat::variogram(T_15~1, data = df2_05, width = 6000, map = TRUE, cutoff = 35000)
 
 data.frame(map) |> 
 ggplot(aes(x=map.dx,y=map.dy,fill=map.var1))+
@@ -144,6 +183,14 @@ ggplot(aes(x=map.dx,y=map.dy,fill=map.var1))+
   scale_fill_viridis_c(option = 'magma') +
   theme_minimal() +
   labs(x = 'dx', y = 'dy', fill = '')
+
+data.frame(map_05) |> 
+ggplot(aes(x=map.dx,y=map.dy,fill=map.var1))+
+  geom_raster() + 
+  scale_fill_viridis_c(option = 'magma') +
+  theme_minimal() +
+  labs(x = 'dx', y = 'dy', fill = '')
+
 ```
 
 ```{r}
@@ -154,23 +201,37 @@ st_bbox(geom) |>
   st_as_stars(dx = 10) |> 
   st_crop(geom)-> grd
 v.m = fit.variogram(empirical_variogram, estimated_variogram.model)
-
+v.m_05 = fit.variogram(empirical_variogram_05, estimated_variogram.model_05)
 v.m
 ```
 
 ```{r}
+#| layout-ncol: 2
+
 plot(empirical_variogram, v.m)
+plot(empirical_variogram_05, v.m_05)
 ```
 
 ```{r}
 k = krige(T_15~1, df2, grd, v.m)
+k_05 = krige(T_15~1, df2_05, grd, v.m_05)
 ```
 
 ```{r}
+#| layout-ncol: 2
+
 ggplot() + geom_stars(data = k, aes(fill = var1.pred, x = x, y = y)) + 
   geom_sf(data = df2) +
   coord_sf(lims_method = "geometry_bbox") + 
   geom_sf_label(data = df2, aes(label = round(T_15, digits = 2)), size = 2) +
+  theme_minimal() + 
+  labs(x = '', y= '', fill = 'Prediction') +
+  scale_fill_viridis_c(option = 'magma')
+
+ggplot() + geom_stars(data = k_05, aes(fill = var1.pred, x = x, y = y)) + 
+  geom_sf(data = df2_05) +
+  coord_sf(lims_method = "geometry_bbox") + 
+  geom_sf_label(data = df2_05, aes(label = round(T_15, digits = 2)), size = 2) +
   theme_minimal() + 
   labs(x = '', y= '', fill = 'Prediction') +
   scale_fill_viridis_c(option = 'magma')
